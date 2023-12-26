@@ -57,4 +57,57 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  // Validation
+  if (!email || !password) {
+    return sendResponse(
+      res,
+      "error",
+      "Both the email and the password are needed.",
+      401
+    );
+  }
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    return sendResponse(
+      res,
+      "error",
+      "User not found. Please create an account.",
+      401
+    );
+  }
+
+  const passwordIsCorrect = await bcrypt.compare(password, user.password);
+
+  if (!passwordIsCorrect) {
+    return sendResponse(res, "error", "Invalid email or password.", 401);
+  }
+
+  // Trigger two factor authentication for unknown userAgent
+
+  const token = generateToken(user._id);
+  if (user && passwordIsCorrect) {
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400),
+      sameSite: "none",
+      secure: true,
+    });
+
+    const { _id, name, email, phone, bio, photo, role, isVerified } = user;
+    sendResponse(
+      res,
+      "user",
+      { _id, name, email, phone, bio, photo, role, isVerified, token },
+      200
+    );
+  } else {
+    sendResponse(res, "error", "Something went wrong. Please try again.", 500);
+  }
+});
+
+module.exports = { registerUser, loginUser };
