@@ -125,4 +125,9 @@ const logoutUser = asyncHandler(async (req, res) => {
   return sendResponse(res, "success", "User successfully logged out.", 200);
 });
 
-module.exports = { registerUser, loginUser, logoutUser };
+// Get user info
+const getUser = asyncHandler(async (req, res) => {
+  sendResponse(res, "success", "Get User", 200);
+});
+
+module.exports = { registerUser, loginUser, logoutUser, getUser };

@@ -38,7 +38,7 @@ const userSchema = mongoose.Schema(
     role: {
       type: String,
       required: true,
-      default: "Subscriber",
+      default: "subscriber",
     },
     isVerified: {
       type: Boolean,
