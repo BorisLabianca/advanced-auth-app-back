@@ -4,6 +4,7 @@ const bcrypt = require("bcryptjs");
 const parser = require("ua-parser-js");
 const { sendResponse, generateToken } = require("../utils/helper");
 
+// Sing up
 const registerUser = asyncHandler(async (req, res) => {
   const { name, email, password } = req.body;
   // Validation
@@ -57,6 +58,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 });
 
+// Login
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -110,4 +112,17 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { registerUser, loginUser };
+// Logout
+const logoutUser = asyncHandler(async (req, res) => {
+  res.cookie("token", "", {
+    path: "/",
+    httpOnly: true,
+    expires: new Date(0),
+    sameSite: "none",
+    secure: true,
+  });
+
+  return sendResponse(res, "success", "User successfully logged out.", 200);
+});
+
+module.exports = { registerUser, loginUser, logoutUser };
