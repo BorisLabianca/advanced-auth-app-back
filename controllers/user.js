@@ -141,4 +141,44 @@ const getUser = asyncHandler(async (req, res) => {
   }
 });
 
-module.exports = { registerUser, loginUser, logoutUser, getUser };
+// Update user
+
+const updateUser = asyncHandler(async (req, res) => {
+  if (!req.body.name && !req.body.phone && !req.body.bio && !req.body.photo)
+    return sendResponse(
+      res,
+      "error",
+      "Please update at least one piece of information.",
+      400
+    );
+
+  const user = await User.findById(req.user._id);
+  if (user) {
+    const { name, phone, bio, photo } = user;
+    user.name = req.body.name || name;
+    user.phone = req.body.phone || phone;
+    user.bio = req.body.bio || bio;
+    user.photo = req.body.photo || photo;
+
+    const updatedUser = await user.save();
+    sendResponse(
+      res,
+      "user",
+      {
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        phone: updatedUser.phone,
+        bio: updatedUser.bio,
+        photo: updatedUser.photo,
+        role: updatedUser.role,
+        isVerified: updatedUser.isVerified,
+      },
+      200
+    );
+  } else {
+    sendResponse(res, "error", "User not found.", 404);
+  }
+});
+
+module.exports = { registerUser, loginUser, logoutUser, getUser, updateUser };
