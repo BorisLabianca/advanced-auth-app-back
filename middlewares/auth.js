@@ -46,7 +46,7 @@ exports.isAnAuthor = asyncHandler(async (req, res, next) => {
   if (req.user.role === "author" || req.user.role === "admin") {
     next();
   } else {
-    return sendResponse(res, "error", "Not an author.", 401);
+    return sendResponse(res, "error", "Not an author, nor an admin.", 401);
   }
 });
 
