@@ -33,3 +33,27 @@ exports.isAuthenticated = asyncHandler(async (req, res, next) => {
     return sendResponse(res, "error", "Not authorized. Please log in.", 401);
   }
 });
+
+exports.isAdmin = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    return sendResponse(res, "error", "Not an admin.", 401);
+  }
+});
+
+exports.isAnAuthor = asyncHandler(async (req, res, next) => {
+  if (req.user.role === "author" || req.user.role === "admin") {
+    next();
+  } else {
+    return sendResponse(res, "error", "Not an author.", 401);
+  }
+});
+
+exports.isVerifiedUser = asyncHandler(async (req, res, next) => {
+  if (req.user && req.user.isVerified) {
+    next();
+  } else {
+    return sendResponse(res, "error", "Please verify account first.", 401);
+  }
+});
