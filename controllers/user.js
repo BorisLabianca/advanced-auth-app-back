@@ -5,6 +5,7 @@ const parser = require("ua-parser-js");
 const jwt = require("jsonwebtoken");
 const { sendResponse, generateToken } = require("../utils/helper");
 const { isValidObjectId } = require("mongoose");
+const { sendEmail } = require("../utils/sendEmail");
 
 // Sing up
 const registerUser = asyncHandler(async (req, res) => {
@@ -234,6 +235,34 @@ const upgradeUser = asyncHandler(async (req, res) => {
   sendResponse(res, "message", `User role updated to ${role}.`, 200);
 });
 
+const sendAutomatedEmail = asyncHandler(async (req, res) => {
+  const { subject, send_to, reply_to, template, url } = req.body;
+  if (!subject || !send_to || !reply_to || !template)
+    return sendResponse(res, "error", "Missing parameters.", 400);
+
+  const user = await User.findOne({ email: send_to });
+  if (!user) return sendResponse(res, "error", "User not found.", 404);
+
+  const sent_from = process.env.EMAIL_USER;
+  const name = user.name;
+  const link = `${process.env.FRONT_END_URL}${url}`;
+
+  try {
+    await sendEmail(
+      subject,
+      send_to,
+      sent_from,
+      reply_to,
+      template,
+      name,
+      link
+    );
+    sendResponse(res, "message", "Email successfully sent.", 200);
+  } catch (error) {
+    sendResponse(res, "error", "Email not sent. Please try again.", 500);
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -244,4 +273,5 @@ module.exports = {
   getAllUsers,
   loginStatus,
   upgradeUser,
+  sendAutomatedEmail,
 };
