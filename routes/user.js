@@ -11,6 +11,7 @@ const {
   loginStatus,
   upgradeUser,
   sendAutomatedEmail,
+  sendVerificationEmail,
 } = require("../controllers/user");
 const router = express.Router();
 
@@ -18,6 +19,7 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/upgrade-user", isAuthenticated, isAdmin, upgradeUser);
 router.post("/send-automated-email", isAuthenticated, sendAutomatedEmail);
+router.post("/send-verification-email", isAuthenticated, sendVerificationEmail);
 
 router.get("/logout", logoutUser);
 router.get("/get-user", isAuthenticated, getUser);

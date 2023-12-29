@@ -1,9 +1,11 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
+const Token = require("../models/Token");
 const bcrypt = require("bcryptjs");
 const parser = require("ua-parser-js");
 const jwt = require("jsonwebtoken");
-const { sendResponse, generateToken } = require("../utils/helper");
+const crypto = require("crypto");
+const { sendResponse, generateToken, hashToken } = require("../utils/helper");
 const { isValidObjectId } = require("mongoose");
 const { sendEmail } = require("../utils/sendEmail");
 
@@ -58,6 +60,60 @@ const registerUser = asyncHandler(async (req, res) => {
     );
   } else {
     sendResponse(res, "error", "Invalid user data", 400);
+  }
+});
+
+// Send verification email
+const sendVerificationEmail = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).select("-password");
+  if (!user) return sendResponse(res, "error", "User not found.", 404);
+  if (user.isVerified)
+    return sendResponse(res, "error", "User already verified.", 400);
+
+  // Delete token if there already one for this user
+  let token = await Token.findOne({ userId: user._id });
+  if (token) {
+    await token.deleteOne();
+  }
+
+  // Create verification token and save it
+  const verificationToken = crypto.randomBytes(32).toString("hex") + user._id;
+
+  // Hash token and save it
+  const hashedToken = hashToken(verificationToken);
+  await new Token({
+    userId: user._id,
+    verificationToken: hashedToken,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60 * (60 * 1000),
+  }).save();
+
+  // Construct verification url
+  const verificationUrl = `${process.env.FRONT_END_URL}/verify/${verificationToken}`;
+  console.log(verificationToken);
+
+  // Send verification email
+  const subject = "Verify your AdvAUTH account";
+  const send_to = user.email;
+  const sent_from = process.env.EMAIL_USER;
+  const reply_to = "noreply@advauth.com";
+  const template = "verifyEmail";
+  const name = user.name;
+  const link = verificationUrl;
+
+  try {
+    await sendEmail(
+      subject,
+      send_to,
+      sent_from,
+      reply_to,
+      template,
+      name,
+      link
+    );
+    sendResponse(res, "message", "Verification email successfully sent.", 200);
+  } catch (error) {
+    sendResponse(res, "error", "Email not sent. Please try again.", 500);
   }
 });
 
@@ -274,4 +330,5 @@ module.exports = {
   loginStatus,
   upgradeUser,
   sendAutomatedEmail,
+  sendVerificationEmail,
 };
