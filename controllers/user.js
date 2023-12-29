@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const parser = require("ua-parser-js");
+const jwt = require("jsonwebtoken");
 const { sendResponse, generateToken } = require("../utils/helper");
 const { isValidObjectId } = require("mongoose");
 
@@ -186,7 +187,6 @@ const deleteUser = asyncHandler(async (req, res) => {
   if (!isValidObjectId(req.params.id))
     return sendResponse(res, "error", "Invalid user id.");
   const user = await User.findById(req.params.id);
-  console.log(user);
   if (!user) return sendResponse(res, "error", "User not found.", 404);
 
   await User.deleteOne({ _id: req.params.id });
@@ -201,6 +201,20 @@ const getAllUsers = asyncHandler(async (req, res) => {
   sendResponse(res, "users", users, 200);
 });
 
+const loginStatus = asyncHandler(async (req, res) => {
+  const token = req.cookies.token;
+  if (!token) {
+    return res.json(false);
+  }
+
+  const verified = jwt.verify(token, process.env.JWT_SECRET);
+  if (verified) {
+    return res.json(true);
+  }
+
+  return res.json(false);
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -209,4 +223,5 @@ module.exports = {
   updateUser,
   deleteUser,
   getAllUsers,
+  loginStatus,
 };

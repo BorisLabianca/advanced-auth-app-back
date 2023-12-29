@@ -8,6 +8,7 @@ const {
   updateUser,
   deleteUser,
   getAllUsers,
+  loginStatus,
 } = require("../controllers/user");
 const router = express.Router();
 
@@ -17,6 +18,7 @@ router.post("/login", loginUser);
 router.get("/logout", logoutUser);
 router.get("/get-user", isAuthenticated, getUser);
 router.get("/get-all-users", isAuthenticated, isAnAuthor, getAllUsers);
+router.get("/login-status", loginStatus);
 
 router.patch("/update-user", isAuthenticated, updateUser);
 
