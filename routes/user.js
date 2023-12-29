@@ -9,11 +9,13 @@ const {
   deleteUser,
   getAllUsers,
   loginStatus,
+  upgradeUser,
 } = require("../controllers/user");
 const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
+router.post("/upgrade-user", isAuthenticated, isAdmin, upgradeUser);
 
 router.get("/logout", logoutUser);
 router.get("/get-user", isAuthenticated, getUser);

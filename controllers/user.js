@@ -215,6 +215,25 @@ const loginStatus = asyncHandler(async (req, res) => {
   return res.json(false);
 });
 
+const upgradeUser = asyncHandler(async (req, res) => {
+  const { id, role } = req.body;
+  if (!id) return sendResponse(res, "error", "User id is needed.", 400);
+  if (!role) return sendResponse(res, "error", "User role is needed.", 400);
+
+  if (!isValidObjectId(id))
+    return sendResponse(res, "error", "Invalid user id.");
+
+  const user = await User.findById(id);
+  if (!user) return sendResponse(res, "error", "User not found.", 400);
+  if (user.role === role)
+    return sendResponse(res, "error", "User role must be different.", 400);
+
+  user.role = role;
+  await user.save();
+
+  sendResponse(res, "message", `User role updated to ${role}.`, 200);
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -224,4 +243,5 @@ module.exports = {
   deleteUser,
   getAllUsers,
   loginStatus,
+  upgradeUser,
 };
