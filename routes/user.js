@@ -12,6 +12,7 @@ const {
   upgradeUser,
   sendAutomatedEmail,
   sendVerificationEmail,
+  verifyUser,
 } = require("../controllers/user");
 const router = express.Router();
 
@@ -27,6 +28,7 @@ router.get("/get-all-users", isAuthenticated, isAnAuthor, getAllUsers);
 router.get("/login-status", loginStatus);
 
 router.patch("/update-user", isAuthenticated, updateUser);
+router.patch("/verify-user/:verificationToken", verifyUser);
 
 router.delete("/delete/:id", isAuthenticated, isAdmin, deleteUser);
 

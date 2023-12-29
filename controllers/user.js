@@ -90,7 +90,7 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
 
   // Construct verification url
   const verificationUrl = `${process.env.FRONT_END_URL}/verify/${verificationToken}`;
-  console.log(verificationToken);
+  // console.log(verificationToken);
 
   // Send verification email
   const subject = "Verify your AdvAUTH account";
@@ -115,6 +115,33 @@ const sendVerificationEmail = asyncHandler(async (req, res) => {
   } catch (error) {
     sendResponse(res, "error", "Email not sent. Please try again.", 500);
   }
+});
+
+// Verify user
+const verifyUser = asyncHandler(async (req, res) => {
+  const { verificationToken } = req.params;
+  if (!verificationToken)
+    return sendResponse(res, "error", "No verification token found.", 400);
+
+  const hashedToken = hashToken(verificationToken);
+  const userToken = await Token.findOne({
+    verificationToken: hashedToken,
+    expiresAt: { $gt: Date.now() },
+  });
+
+  if (!userToken)
+    return sendResponse(res, "error", "Token is invalid or expired.", 404);
+
+  const user = await User.findOne({ _id: userToken.userId });
+
+  if (user.isVerified)
+    return sendResponse(res, "error", "User already verified.", 400);
+
+  user.isVerified = true;
+
+  await user.save();
+
+  sendResponse(res, "message", "Account verification successful.", 200);
 });
 
 // Login
@@ -331,4 +358,5 @@ module.exports = {
   upgradeUser,
   sendAutomatedEmail,
   sendVerificationEmail,
+  verifyUser,
 };
