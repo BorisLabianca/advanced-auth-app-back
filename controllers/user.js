@@ -393,6 +393,46 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 });
 
+const resetPassword = asyncHandler(async (req, res) => {
+  const { passwordResetToken } = req.params;
+  const { password } = req.body;
+  if (!passwordResetToken || !password)
+    return sendResponse(res, "error", "Missing parameters.", 200);
+
+  if (password.length < 8) {
+    return sendResponse(
+      res,
+      "error",
+      "Password must be at least 8 characters long.",
+      400
+    );
+  }
+
+  const hashedToken = hashToken(passwordResetToken);
+
+  const userToken = await Token.findOne({
+    passwordResetToken: hashedToken,
+    expiresAt: { $gt: Date.now() },
+  });
+
+  if (!userToken) {
+    return sendResponse(res, "error", "Token is invalid or has expired.", 404);
+  }
+
+  const user = await User.findOne({ _id: userToken.userId });
+  if (!user) return sendResponse(res, "error", "User not found.", 404);
+
+  user.password = password;
+  await user.save();
+
+  sendResponse(
+    res,
+    "message",
+    "Password successfully reset. Please login.",
+    200
+  );
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -407,4 +447,5 @@ module.exports = {
   sendVerificationEmail,
   verifyUser,
   forgotPassword,
+  resetPassword,
 };
