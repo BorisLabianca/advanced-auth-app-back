@@ -5,9 +5,12 @@ const bcrypt = require("bcryptjs");
 const parser = require("ua-parser-js");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
+const Cryptr = require("cryptr");
 const { sendResponse, generateToken, hashToken } = require("../utils/helper");
 const { isValidObjectId } = require("mongoose");
 const { sendEmail } = require("../utils/sendEmail");
+
+const cryptr = new Cryptr(process.env.CRYPTR_SECRET_KEY);
 
 // Sing up
 const registerUser = asyncHandler(async (req, res) => {
@@ -175,6 +178,31 @@ const loginUser = asyncHandler(async (req, res) => {
   }
 
   // Trigger two factor authentication for unknown userAgent
+  const ua = parser(req.headers["user-agent"]);
+  const thisUserAgent = ua.ua;
+  const savedAgent = user.userAgent.includes(thisUserAgent);
+  if (!savedAgent) {
+    const loginCode = Math.floor(100000 + Math.random() * 900000);
+    const encryptedLoginCode = cryptr.encrypt(loginCode.toString());
+
+    let userToken = await Token.findOne({ userId: user._id });
+    if (userToken) {
+      await userToken.deleteOne();
+    }
+
+    await new Token({
+      userId: user._id,
+      loginToken: encryptedLoginCode,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + 60 * (60 * 1000),
+    }).save();
+
+    return sendResponse(
+      res,
+      "warning",
+      "New device detected. Please check your email for login code."
+    );
+  }
 
   const token = generateToken(user._id);
   if (user && passwordIsCorrect) {
