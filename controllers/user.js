@@ -200,7 +200,8 @@ const loginUser = asyncHandler(async (req, res) => {
     return sendResponse(
       res,
       "warning",
-      "New device detected. Please check your email for login code."
+      "New device detected. Please check your email for login code.",
+      400
     );
   }
 
@@ -223,6 +224,104 @@ const loginUser = asyncHandler(async (req, res) => {
     );
   } else {
     sendResponse(res, "error", "Something went wrong. Please try again.", 500);
+  }
+});
+
+const sendLoginCode = asyncHandler(async (req, res) => {
+  const { email } = req.params;
+  const user = await User.findOne({ email });
+  if (!user) return sendResponse(res, "error", "User not found.", 404);
+
+  const loginToken = await Token.findOne({
+    userId: user._id,
+    expiresAt: { $gt: Date.now() },
+  });
+
+  if (!loginToken)
+    return sendResponse(
+      res,
+      "error",
+      "Token is invalid or has expired. Please log in again.",
+      404
+    );
+  const loginCode = loginToken.loginToken;
+  if (!loginCode)
+    return sendResponse(
+      res,
+      "error",
+      "Login token not found. Please log in again.",
+      404
+    );
+
+  const decryptedLoginCode = cryptr.decrypt(loginCode);
+  const subject = "Login Access Code - AdvAUTH account";
+  const send_to = email;
+  const sent_from = process.env.EMAIL_USER;
+  const reply_to = "noreply@advauth.com";
+  const template = "loginCode";
+  const name = user.name;
+  const link = decryptedLoginCode;
+
+  try {
+    await sendEmail(
+      subject,
+      send_to,
+      sent_from,
+      reply_to,
+      template,
+      name,
+      link
+    );
+    sendResponse(res, "message", `A login code has been sent to ${email}`, 200);
+  } catch (error) {
+    sendResponse(res, "error", "Email not sent. Please try again.", 400);
+  }
+});
+
+const loginWithCode = asyncHandler(async (req, res) => {
+  const { email } = req.params;
+  const { loginCode } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return sendResponse(res, "error", "User not found.", 404);
+
+  const userToken = await Token.findOne({
+    userId: user._id,
+    expiresAt: { $gt: Date.now() },
+  });
+  if (!userToken)
+    return sendResponse(res, "error", "Token is invalid or has expired.", 404);
+
+  const decryptedToken = cryptr.decrypt(userToken.loginToken);
+  if (decryptedToken !== loginCode) {
+    return sendResponse(
+      res,
+      "error",
+      "Invalid login code. Please try again.",
+      400
+    );
+  } else {
+    const ua = parser(req.headers(["user-agent"]));
+    const thisUserAgent = ua.ua;
+    user.userAgent.push(thisUserAgent);
+    await user.save();
+
+    const token = generateToken(user._id);
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400),
+      sameSite: "none",
+      secure: true,
+    });
+
+    const { _id, name, email, phone, bio, photo, role, isVerified } = user;
+    sendResponse(
+      res,
+      "user",
+      { _id, name, email, phone, bio, photo, role, isVerified, token },
+      200
+    );
   }
 });
 
@@ -511,4 +610,6 @@ module.exports = {
   forgotPassword,
   resetPassword,
   changePassword,
+  sendLoginCode,
+  loginWithCode,
 };

@@ -16,6 +16,8 @@ const {
   forgotPassword,
   resetPassword,
   changePassword,
+  sendLoginCode,
+  loginWithCode,
 } = require("../controllers/user");
 const router = express.Router();
 
@@ -25,6 +27,8 @@ router.post("/upgrade-user", isAuthenticated, isAdmin, upgradeUser);
 router.post("/send-automated-email", isAuthenticated, sendAutomatedEmail);
 router.post("/send-verification-email", isAuthenticated, sendVerificationEmail);
 router.post("/forgot-password/", forgotPassword);
+router.post("/send-login-code/:email", sendLoginCode);
+router.post("/login-with-code/:email", loginWithCode);
 
 router.get("/logout", logoutUser);
 router.get("/get-user", isAuthenticated, getUser);
