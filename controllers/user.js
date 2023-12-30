@@ -346,6 +346,53 @@ const sendAutomatedEmail = asyncHandler(async (req, res) => {
   }
 });
 
+const forgotPassword = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return sendResponse(res, "error", "User not found.", 404);
+
+  let token = await Token.findOne({ userId: user._id });
+  if (token) {
+    await token.deleteOne();
+  }
+
+  const resetToken = crypto.randomBytes(32).toString("hex") + user._id;
+
+  const hashedToken = hashToken(resetToken);
+  await new Token({
+    userId: user._id,
+    passwordResetToken: hashedToken,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + 60 * (60 * 1000),
+  }).save();
+
+  const resetUrl = `${process.env.FRONT_END_URL}/reset-password/${resetToken}`;
+
+  const subject = "Password Reset Request - AdvAUTH account";
+  const send_to = user.email;
+  const sent_from = process.env.EMAIL_USER;
+  const reply_to = "noreply@advauth.com";
+  const template = "forgotPassword";
+  const name = user.name;
+  const link = resetUrl;
+
+  try {
+    await sendEmail(
+      subject,
+      send_to,
+      sent_from,
+      reply_to,
+      template,
+      name,
+      link
+    );
+    sendResponse(res, "message", "Password reset email sent.", 200);
+  } catch (error) {
+    sendResponse(res, "error", "Email not sent. Please try again.", 400);
+  }
+});
+
 module.exports = {
   registerUser,
   loginUser,
@@ -359,4 +406,5 @@ module.exports = {
   sendAutomatedEmail,
   sendVerificationEmail,
   verifyUser,
+  forgotPassword,
 };
