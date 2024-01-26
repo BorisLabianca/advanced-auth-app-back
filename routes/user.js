@@ -1,5 +1,6 @@
 const express = require("express");
 const { isAuthenticated, isAdmin, isAnAuthor } = require("../middlewares/auth");
+const fileUpload = require("express-fileupload");
 const {
   registerUser,
   loginUser,
@@ -19,6 +20,7 @@ const {
   sendLoginCode,
   loginWithCode,
 } = require("../controllers/user");
+
 const router = express.Router();
 
 router.post("/register", registerUser);
@@ -35,7 +37,7 @@ router.get("/get-user", isAuthenticated, getUser);
 router.get("/get-all-users", isAuthenticated, isAnAuthor, getAllUsers);
 router.get("/login-status", loginStatus);
 
-router.patch("/update-user", isAuthenticated, updateUser);
+router.patch("/update-user", isAuthenticated, fileUpload(), updateUser);
 router.patch("/verify-user/:verificationToken", verifyUser);
 router.patch("/reset-password/:passwordResetToken", resetPassword);
 router.patch("/change-password/", isAuthenticated, changePassword);

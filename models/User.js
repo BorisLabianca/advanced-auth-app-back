@@ -22,10 +22,14 @@ const userSchema = mongoose.Schema(
       required: [true, "Please add a password."],
     },
     photo: {
-      type: String,
+      type: Object,
+      url: String,
+      public_id: String,
       required: [true, "Please add a photo."],
-      default:
-        "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/avatar_vmxetj.png",
+      default: {
+        url: "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/avatar_vmxetj.png",
+        public_id: "avatar_vmxetj.png",
+      },
     },
     phone: {
       type: String,

@@ -9,6 +9,7 @@ const Cryptr = require("cryptr");
 const { sendResponse, generateToken, hashToken } = require("../utils/helper");
 const { isValidObjectId } = require("mongoose");
 const { sendEmail } = require("../utils/sendEmail");
+const cloudinary = require("cloudinary").v2;
 
 const cryptr = new Cryptr(process.env.CRYPTR_SECRET_KEY);
 
@@ -364,14 +365,35 @@ const updateUser = asyncHandler(async (req, res) => {
       "Please update at least one piece of information.",
       400
     );
-
+  const convertToBase64 = (file) => {
+    return `data:${file.mimetype};base64,${file.data.toString("base64")}`;
+  };
   const user = await User.findById(req.user._id);
+  if (req.files?.photo) {
+    if (!user.photo) {
+      const { secure_url: url, public_id } = await cloudinary.uploader.upload(
+        convertToBase64(req.files.photo),
+        {
+          folder: `/advancedAuth/user/${user._id}`,
+        }
+      );
+      user.photo = { url, public_id };
+    } else {
+      await cloudinary.uploader.destroy(user.photo.public_id);
+      const { secure_url: url, public_id } = await cloudinary.uploader.upload(
+        convertToBase64(req.files.avatar),
+        {
+          folder: `/happycow/user/${userToUpdate._id}`,
+        }
+      );
+      user.photo = { url, public_id };
+    }
+  }
   if (user) {
-    const { name, phone, bio, photo } = user;
+    const { name, phone, bio } = user;
     user.name = req.body.name || name;
     user.phone = req.body.phone || phone;
     user.bio = req.body.bio || bio;
-    user.photo = req.body.photo || photo;
 
     const updatedUser = await user.save();
     sendResponse(

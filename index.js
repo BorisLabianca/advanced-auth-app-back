@@ -6,12 +6,20 @@ const cookieParser = require("cookie-parser");
 const connectDB = require("./database");
 const { handleNotFound } = require("./utils/helper");
 const { errorHandler } = require("./middlewares/error");
+const cloudinary = require("cloudinary").v2;
 require("dotenv").config();
 
 // Route imports
 const userRoutes = require("./routes/user");
 
 const app = express();
+
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+  secure: true,
+});
 
 // Middlewares
 app.use(express.json());
