@@ -366,30 +366,37 @@ const updateUser = asyncHandler(async (req, res) => {
       400
     );
   const convertToBase64 = (file) => {
-    return `data:${file.mimetype};base64,${file.data.toString("base64")}`;
+    return `data:${file?.mimetype};base64,${file.data.toString("base64")}`;
   };
+  // console.log(req.files?.photo.mimetype);
   const user = await User.findById(req.user._id);
-  if (req.files?.photo) {
-    if (!user.photo) {
-      const { secure_url: url, public_id } = await cloudinary.uploader.upload(
-        convertToBase64(req.files.photo),
-        {
-          folder: `/advancedAuth/user/${user._id}`,
-        }
-      );
-      user.photo = { url, public_id };
-    } else {
-      await cloudinary.uploader.destroy(user.photo.public_id);
-      const { secure_url: url, public_id } = await cloudinary.uploader.upload(
-        convertToBase64(req.files.avatar),
-        {
-          folder: `/happycow/user/${userToUpdate._id}`,
-        }
-      );
-      user.photo = { url, public_id };
-    }
-  }
+
   if (user) {
+    if (req.files?.photo) {
+      if (
+        !user.photo.url ||
+        user.photo.url ===
+          "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/advancedAuth/user/avatar_vmxetj.png"
+      ) {
+        const { secure_url: url, public_id } = await cloudinary.uploader.upload(
+          convertToBase64(req.files.photo),
+          {
+            folder: `/advancedAuth/user/${user._id}`,
+          }
+        );
+        user.photo = { url, public_id };
+      } else {
+        console.log("From else: ", user.photo);
+        await cloudinary.uploader.destroy(user.photo.public_id);
+        const { secure_url: url, public_id } = await cloudinary.uploader.upload(
+          convertToBase64(req.files.photo),
+          {
+            folder: `/advancedAuth/user/${user._id}`,
+          }
+        );
+        user.photo = { url, public_id };
+      }
+    }
     const { name, phone, bio } = user;
     user.name = req.body.name || name;
     user.phone = req.body.phone || phone;

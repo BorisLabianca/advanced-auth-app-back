@@ -27,8 +27,8 @@ const userSchema = mongoose.Schema(
       public_id: String,
       required: [true, "Please add a photo."],
       default: {
-        url: "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/avatar_vmxetj.png",
-        public_id: "avatar_vmxetj.png",
+        url: "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/advancedAuth/user/avatar_vmxetj.png",
+        public_id: "advancedAuth/user/avatar_vmxetj",
       },
     },
     phone: {
