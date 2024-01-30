@@ -580,6 +580,7 @@ const resetPassword = asyncHandler(async (req, res) => {
 
   user.password = password;
   await user.save();
+  await Token.findOneAndDelete({ passwordResetToken: hashedToken });
 
   sendResponse(
     res,
