@@ -181,6 +181,7 @@ const loginUser = asyncHandler(async (req, res) => {
   // Trigger two factor authentication for unknown userAgent
   const ua = parser(req.headers["user-agent"]);
   const thisUserAgent = ua.ua;
+  console.log(thisUserAgent);
   const savedAgent = user.userAgent.includes(thisUserAgent);
   if (!savedAgent) {
     const loginCode = Math.floor(100000 + Math.random() * 900000);
