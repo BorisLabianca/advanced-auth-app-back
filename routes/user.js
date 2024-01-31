@@ -25,7 +25,6 @@ const router = express.Router();
 
 router.post("/register", registerUser);
 router.post("/login", loginUser);
-router.post("/upgrade-user", isAuthenticated, isAdmin, upgradeUser);
 router.post("/send-automated-email", isAuthenticated, sendAutomatedEmail);
 router.post("/send-verification-email", isAuthenticated, sendVerificationEmail);
 router.post("/forgot-password/", forgotPassword);
@@ -41,6 +40,7 @@ router.patch("/update-user", isAuthenticated, fileUpload(), updateUser);
 router.patch("/verify-user/:verificationToken", verifyUser);
 router.patch("/reset-password/:passwordResetToken", resetPassword);
 router.patch("/change-password/", isAuthenticated, changePassword);
+router.patch("/upgrade-user", isAuthenticated, isAdmin, upgradeUser);
 
 router.delete("/delete/:id", isAuthenticated, isAdmin, deleteUser);
 
