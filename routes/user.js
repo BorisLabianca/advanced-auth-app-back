@@ -19,6 +19,7 @@ const {
   changePassword,
   sendLoginCode,
   loginWithCode,
+  loginWithGoogle,
 } = require("../controllers/user");
 
 const router = express.Router();
@@ -30,6 +31,8 @@ router.post("/send-verification-email", isAuthenticated, sendVerificationEmail);
 router.post("/forgot-password/", forgotPassword);
 router.post("/send-login-code/:email", sendLoginCode);
 router.post("/login-with-code/:email", loginWithCode);
+// Google login
+router.post("/google/callback", loginWithGoogle);
 
 router.get("/logout", logoutUser);
 router.get("/get-user", isAuthenticated, getUser);
