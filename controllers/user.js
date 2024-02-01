@@ -10,8 +10,10 @@ const { sendResponse, generateToken, hashToken } = require("../utils/helper");
 const { isValidObjectId } = require("mongoose");
 const { sendEmail } = require("../utils/sendEmail");
 const cloudinary = require("cloudinary").v2;
+const { GoogleAuth, OAuth2Client } = require("google-auth-library");
 
 const cryptr = new Cryptr(process.env.CRYPTR_SECRET_KEY);
+const client = new OAuth2Client(process.env.ADV_AUTH_GOOGLE_CLIENT_ID);
 
 // Sing up
 const registerUser = asyncHandler(async (req, res) => {
@@ -378,7 +380,8 @@ const updateUser = asyncHandler(async (req, res) => {
       if (
         !user.photo.url ||
         user.photo.url ===
-          "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/advancedAuth/user/avatar_vmxetj.png"
+          "https://res.cloudinary.com/dbe27rnpk/image/upload/v1703515550/advancedAuth/user/avatar_vmxetj.png" ||
+        user.public_id === "googlePic"
       ) {
         const { secure_url: url, public_id } = await cloudinary.uploader.upload(
           convertToBase64(req.files.photo),
@@ -629,8 +632,76 @@ const changePassword = asyncHandler(async (req, res) => {
 
 const loginWithGoogle = asyncHandler(async (req, res) => {
   const { userToken } = req.body;
-  console.log(userToken);
-  res.send("Google Login");
+  // console.log("userToken: ", userToken);
+
+  const ticket = await client.verifyIdToken({
+    idToken: userToken,
+    audience: process.env.ADV_AUTH_GOOGLE_CLIENT_ID,
+  });
+
+  const payload = ticket.getPayload();
+  // console.log("payload: ", payload);
+  const { name, email, picture, sub } = payload;
+  const password = Date.now() + sub;
+
+  // Get user agent
+  const ua = parser(req.headers["user-agent"]);
+  const userAgent = [ua.ua];
+
+  const userExist = await User.findOne({ email });
+  if (!userExist) {
+    // Create new user
+    const newUser = await User.create({
+      name,
+      email,
+      password,
+      photo: { url: picture, public_id: "googlePic" },
+      isVerified: true,
+      userAgent,
+    });
+
+    if (newUser) {
+      // Generate token
+      const token = generateToken(newUser._id);
+
+      // Send HTTP-only cookie
+      res.cookie("token", token, {
+        path: "/",
+        httpOnly: true,
+        expires: new Date(Date.now() + 1000 * 86400),
+        sameSite: "none",
+        secure: true,
+      });
+      const { _id, name, email, phone, bio, photo, role, isVerified } = newUser;
+      sendResponse(
+        res,
+        "user",
+        { _id, name, email, phone, bio, photo, role, isVerified, token },
+        201
+      );
+    }
+  }
+
+  if (userExist) {
+    // Generate token
+    const token = generateToken(userExist._id);
+
+    // Send HTTP-only cookie
+    res.cookie("token", token, {
+      path: "/",
+      httpOnly: true,
+      expires: new Date(Date.now() + 1000 * 86400),
+      sameSite: "none",
+      secure: true,
+    });
+    const { _id, name, email, phone, bio, photo, role, isVerified } = userExist;
+    sendResponse(
+      res,
+      "user",
+      { _id, name, email, phone, bio, photo, role, isVerified, token },
+      201
+    );
+  }
 });
 
 module.exports = {
