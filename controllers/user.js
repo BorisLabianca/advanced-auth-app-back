@@ -185,6 +185,7 @@ const loginUser = asyncHandler(async (req, res) => {
   const savedAgent = user.userAgent.includes(thisUserAgent);
   if (!savedAgent) {
     const loginCode = Math.floor(100000 + Math.random() * 900000);
+    console.log(loginCode);
     const encryptedLoginCode = cryptr.encrypt(loginCode.toString());
 
     let userToken = await Token.findOne({ userId: user._id });
@@ -303,7 +304,7 @@ const loginWithCode = asyncHandler(async (req, res) => {
       400
     );
   } else {
-    const ua = parser(req.headers(["user-agent"]));
+    const ua = parser(req.headers["user-agent"]);
     const thisUserAgent = ua.ua;
     user.userAgent.push(thisUserAgent);
     await user.save();
@@ -515,6 +516,7 @@ const forgotPassword = asyncHandler(async (req, res) => {
   }
 
   const resetToken = crypto.randomBytes(32).toString("hex") + user._id;
+  console.log(resetToken);
 
   const hashedToken = hashToken(resetToken);
   await new Token({
